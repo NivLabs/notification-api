@@ -1,1 +1,1 @@
-# email-api
+# Notification API
