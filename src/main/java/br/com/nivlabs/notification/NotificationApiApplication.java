@@ -1,12 +1,28 @@
 package br.com.nivlabs.notification;
 
+import java.util.TimeZone;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import jakarta.annotation.PostConstruct;
+
 @SpringBootApplication
 public class NotificationApiApplication {
+    private static Logger logger = LoggerFactory.getLogger(NotificationApiApplication.class);
 
-    public static final String AMERICA_SAO_PAULO = "America/Sao_Paulo";
+    @Value(value = "${nivlabs.application.zoneId}")
+    public String zoneId;
+
+    @PostConstruct
+    public void init() {
+        logger.info("Setting Spring Boot SetTimeZone to :: {}", zoneId);
+        // Setting Spring Boot SetTimeZone
+        TimeZone.setDefault(TimeZone.getTimeZone(zoneId));
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(NotificationApiApplication.class, args);

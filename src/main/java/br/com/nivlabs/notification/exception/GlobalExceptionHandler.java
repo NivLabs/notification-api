@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -19,11 +20,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import br.com.nivlabs.notification.NotificationApiApplication;
 import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @Value("${nivlabs.application.zoneId}")
+    public String zoneId;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<StandardError> methodArgumentNotValidException(MethodArgumentNotValidException e,
@@ -86,7 +89,7 @@ public class GlobalExceptionHandler {
         final Long now = LocalDateTime
                 .now()
                 .atZone(ZoneId
-                        .of(NotificationApiApplication.AMERICA_SAO_PAULO))
+                        .of(zoneId))
                 .toInstant().toEpochMilli();
 
         StandardError err = new StandardError(

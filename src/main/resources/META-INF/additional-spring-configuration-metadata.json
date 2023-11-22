@@ -1,0 +1,7 @@
+{"properties": [
+  {
+    "name": "nivlabs.application.zoneId",
+    "type": "java.lang.String",
+    "description": "ZoneId for defining the application timezone"
+  }
+]}
