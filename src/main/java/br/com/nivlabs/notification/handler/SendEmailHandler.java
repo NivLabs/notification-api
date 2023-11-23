@@ -12,16 +12,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 
+import br.com.nivlabs.notification.domain.Notification;
 import br.com.nivlabs.notification.domain.SMTPSettings;
 import br.com.nivlabs.notification.domain.dto.ContentDTO;
 import br.com.nivlabs.notification.domain.dto.NotificationResultDTO;
 import br.com.nivlabs.notification.domain.dto.SendNotificationDTO;
 import br.com.nivlabs.notification.domain.dto.SendNotificationResponseDTO;
 import br.com.nivlabs.notification.enums.ContentType;
-import br.com.nivlabs.notification.enums.NotificationStatus;
+import br.com.nivlabs.notification.enums.NotificationStatusOperation;
 import br.com.nivlabs.notification.exception.HttpException;
 import br.com.nivlabs.notification.integration.EmailIntegration;
-import br.com.nivlabs.notification.util.ContextSecurityUtils;
+import br.com.nivlabs.notification.repository.NotificationRepository;
+import br.com.nivlabs.notification.security.SecurityContextApplication;
 import jakarta.mail.MessagingException;
 
 @Component
@@ -33,29 +35,36 @@ public class SendEmailHandler {
     private TemplateEngine templateEngine;
     @Autowired
     private EmailIntegration emailIntegration;
+    @Autowired
+    private NotificationRepository notificationRepo;
 
     public SendNotificationResponseDTO execute(SendNotificationDTO request) {
         validateRequest(request);
-        final String channelUuid = ContextSecurityUtils.getChannelUuid();
-        logger.info("Starting the email sending process :: {} | {} | {}", channelUuid, request.from(), request.to());
+        final String channelUuid = SecurityContextApplication.getChannelUuid();
+        logger.info("Starting the email sending process :: {} | {} | {}", channelUuid, request.sender(), request.receiver());
 
         final String uuidNotification = UUID.fromString(channelUuid).toString();
         logger.info("Notification operation UUID :: {}", uuidNotification);
+
+        Notification entity = new Notification(uuidNotification, channelUuid, request.subject(), request.sender(), request.receiver());
+        notificationRepo.save(entity);
 
         SendNotificationResponseDTO response = new SendNotificationResponseDTO(uuidNotification, new ArrayList<>());
 
         SMTPSettings smtpSettings = new SMTPSettings();
         request.contents().forEach(content -> {
             if (content.type() == ContentType.htmlTemplate) {
-                response.results().add(sendHtmlMessage(smtpSettings, request.subject(), request.from(), request.to(), content));
+                response.results().add(sendHtmlMessage(smtpSettings, request.subject(), request.sender(), request.receiver(), content));
             } else if (content.type() == ContentType.textplain) {
-                response.results().add(sendTextMessate(smtpSettings, request.subject(), request.from(), request.to(), content));
+                response.results().add(sendTextMessate(smtpSettings, request.subject(), request.sender(), request.receiver(), content));
             } else {
                 final String reason = "Email sending only allows text or html content";
-                response.results().add(new NotificationResultDTO(content.sequence(), NotificationStatus.CANCELED, reason));
+                response.results()
+                        .add(new NotificationResultDTO(content.sequence(), NotificationStatusOperation.PROCESSED_WITH_ERRORS, reason));
                 logger.warn(reason);
             }
         });
+
         return response;
     }
 
@@ -71,35 +80,38 @@ public class SendEmailHandler {
         }
     }
 
-    private NotificationResultDTO sendHtmlMessage(SMTPSettings settings, String subject, String from, String to, ContentDTO content) {
+    private NotificationResultDTO sendHtmlMessage(SMTPSettings settings, String subject, String sender, String receiver,
+                                                  ContentDTO content) {
         try {
             logger.info("Starting html template parse process...");
             emailIntegration.sendHtmlMessage(EmailIntegration.getMailSender(settings),
                                              templateEngine,
                                              subject != null ? subject : "",
-                                             from,
+                                             sender,
                                              content.value(),
                                              content.templateAttributes() != null ? content.templateAttributes()
                                                                                   : Collections.emptyMap(),
-                                             to);
-            return new NotificationResultDTO(content.sequence(), NotificationStatus.PROCESSED, null);
+                                             receiver);
+            return new NotificationResultDTO(content.sequence(), NotificationStatusOperation.PROCESSED, null);
         } catch (MessagingException e) {
             logger.error("Failed to process template email message", e);
-            return new NotificationResultDTO(content.sequence(), NotificationStatus.CANCELED, "Failed to process template email message");
+            return new NotificationResultDTO(content.sequence(), NotificationStatusOperation.PROCESSED_WITH_ERRORS,
+                    "Failed to process template email message");
         } catch (Exception e) {
             logger.error("Failed to send email.", e);
-            return new NotificationResultDTO(content.sequence(), NotificationStatus.CANCELED, e.getMessage());
+            return new NotificationResultDTO(content.sequence(), NotificationStatusOperation.PROCESSED_WITH_ERRORS, e.getMessage());
         }
     }
 
-    private NotificationResultDTO sendTextMessate(SMTPSettings settings, String subject, String from, String to, ContentDTO content) {
+    private NotificationResultDTO sendTextMessate(SMTPSettings settings, String subject, String sender, String receiver,
+                                                  ContentDTO content) {
         try {
             logger.info("Starting text plain parse process...");
-            emailIntegration.sendSimpleMessage(null, subject, from, to, content.value());
-            return new NotificationResultDTO(content.sequence(), NotificationStatus.PROCESSED, null);
+            emailIntegration.sendSimpleMessage(null, subject, sender, receiver, content.value());
+            return new NotificationResultDTO(content.sequence(), NotificationStatusOperation.PROCESSED, null);
         } catch (Exception e) {
             logger.error("Failed to send email.", e);
-            return new NotificationResultDTO(content.sequence(), NotificationStatus.CANCELED, e.getMessage());
+            return new NotificationResultDTO(content.sequence(), NotificationStatusOperation.PROCESSED_WITH_ERRORS, e.getMessage());
         }
     }
 

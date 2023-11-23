@@ -1,7 +1,7 @@
 package br.com.nivlabs.notification.enums;
 
-public enum NotificationStatus {
+public enum NotificationStatusOperation {
     PROCESSED,
     PROCESSING,
-    CANCELED
+    PROCESSED_WITH_ERRORS
 }

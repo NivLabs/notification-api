@@ -13,14 +13,23 @@ public class Notification extends EntityWithCreatedAndUpdatedColumns {
 
     @Id
     private String uuid;
-    @Column(name = "ACCOUNT_UUID")
-    private String accountUuid;
+    @Column(name = "CHANNEL_UUID")
+    private String channelUuid;
     private String subject;
     private String sender;
     private String receiver;
 
     public Notification() {
         super();
+    }
+
+    public Notification(String uuid, String channelUuid, String subject, String sender, String receiver) {
+        super();
+        this.uuid = uuid;
+        this.channelUuid = channelUuid;
+        this.subject = subject;
+        this.sender = sender;
+        this.receiver = receiver;
     }
 
     public String getUuid() {
@@ -31,12 +40,12 @@ public class Notification extends EntityWithCreatedAndUpdatedColumns {
         this.uuid = uuid;
     }
 
-    public String getAccountUuid() {
-        return accountUuid;
+    public String getChannelUuid() {
+        return channelUuid;
     }
 
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
+    public void setChannelUuid(String channelUuid) {
+        this.channelUuid = channelUuid;
     }
 
     public String getSubject() {
@@ -65,7 +74,7 @@ public class Notification extends EntityWithCreatedAndUpdatedColumns {
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountUuid, receiver, sender, subject, uuid);
+        return Objects.hash(channelUuid, receiver, sender, subject, uuid);
     }
 
     @Override
@@ -77,7 +86,7 @@ public class Notification extends EntityWithCreatedAndUpdatedColumns {
         if (getClass() != obj.getClass())
             return false;
         Notification other = (Notification) obj;
-        return Objects.equals(accountUuid, other.accountUuid) && Objects.equals(receiver, other.receiver)
+        return Objects.equals(channelUuid, other.channelUuid) && Objects.equals(receiver, other.receiver)
                 && Objects.equals(sender, other.sender) && Objects.equals(subject, other.subject) && Objects.equals(uuid, other.uuid);
     }
 

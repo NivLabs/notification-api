@@ -7,12 +7,12 @@ import jakarta.validation.constraints.NotNull;
 
 public record SendNotificationDTO(
         String subject,
-        @NotNull(message = "from cannot be null")
-        @NotBlank(message = "from cannot be blank")
-        String from,
-        @NotNull(message = "to cannot be null")
-        @NotBlank(message = "to cannot be blank")
-        String to,
+        @NotNull(message = "sender cannot be null")
+        @NotBlank(message = "sender cannot be blank")
+        String sender,
+        @NotNull(message = "receiver cannot be null")
+        @NotBlank(message = "receiver cannot be blank")
+        String receiver,
         @NotNull(message = "from cannot be null")
         List<ContentDTO> contents) {
 
