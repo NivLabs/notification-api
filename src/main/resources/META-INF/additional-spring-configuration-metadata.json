@@ -3,5 +3,25 @@
     "name": "nivlabs.application.zoneId",
     "type": "java.lang.String",
     "description": "ZoneId for defining the application timezone"
+  },
+  {
+    "name": "nivlabs.notification.smtp.host",
+    "type": "java.lang.String",
+    "description": "SMTP Host server"
+  },
+  {
+    "name": "nivlabs.notification.smtp.port",
+    "type": "java.lang.String",
+    "description": "SMTP Port Server"
+  },
+  {
+    "name": "nivlabs.notification.smtp.password",
+    "type": "java.lang.String",
+    "description": "SMTP Password"
+  },
+  {
+    "name": "nivlabs.notification.smtp.username",
+    "type": "java.lang.String",
+    "description": "SMTP username"
   }
 ]}

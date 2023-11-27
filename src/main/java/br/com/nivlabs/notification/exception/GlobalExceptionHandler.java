@@ -5,13 +5,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,19 +51,6 @@ public class GlobalExceptionHandler {
         return buildResponseEntity(ex, HttpStatus.INTERNAL_SERVER_ERROR, Collections.emptyList(), "Null pointer", request);
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<StandardError> dataIntegrityViolationException(DataIntegrityViolationException ex,
-                                                                         HttpServletRequest request) {
-        if (ex.getMessage().contains("duplicate key value violates unique constraint")) {
-            Pattern pattern = Pattern.compile("\\((.*?)\\)");
-            String[] keyAndValue = pattern.matcher(ex.getMessage()).results().map(m -> m.group(1))
-                    .toArray(String[]::new);
-            Map<String, String> keyAndValueMap = new HashMap<>();
-            keyAndValueMap.put(keyAndValue[0], keyAndValue[1]);
-            return buildResponseEntity(ex, HttpStatus.CONFLICT, Collections.emptyList(), keyAndValueMap.toString(), request);
-        }
-        return buildResponseEntity(ex, HttpStatus.UNPROCESSABLE_ENTITY, Collections.emptyList(), "", request);
-    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardError> handleException(Exception ex, HttpServletRequest request) {

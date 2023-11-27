@@ -1,20 +1,10 @@
 package br.com.nivlabs.notification.integration;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -23,83 +13,53 @@ import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import br.com.nivlabs.notification.domain.SMTPSettings;
-import br.com.nivlabs.notification.exception.HttpException;
-import br.com.nivlabs.notification.util.EncryptUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 @Component
 public class EmailIntegration {
 
-    private static Logger logger = LoggerFactory.getLogger(EmailIntegration.class);
-
-    private static Map<String, JavaMailSender> senders = new HashMap<>();
+    @Value("${nivlabs.notification.smtp.host}")
+    private String host;
+    @Value("${nivlabs.notification.smtp.port}")
+    private Integer port;
+    @Value("${nivlabs.notification.smtp.username}")
+    private String userName;
+    @Value("${nivlabs.notification.smtp.password}")
+    private String password;
 
     /**
-     * Create or update SMTP Client instance
+     * Create SMTP Client instance
      * 
-     * @param settings New settings
-     * @return Updated Settings
+     * @return Mail Sender
      */
-    public static JavaMailSender createOrUpdateMailSender(SMTPSettings settings) {
-        senders.remove(settings.getChannelUuid());
-        JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
-        javaMailSender.setHost(settings.getHost());
-        javaMailSender.setPort(settings.getPort());
+    private JavaMailSender getMailSender() {
+        JavaMailSenderImpl mailSenderInstance = new JavaMailSenderImpl();
+        mailSenderInstance.setHost(host);
+        mailSenderInstance.setPort(port);
 
-        javaMailSender.setUsername(settings.getUserName());
-        try {
-            javaMailSender.setPassword(EncryptUtils.getInstance().decrypt(settings.getPassword()));
-        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException
-                 | IllegalBlockSizeException | BadPaddingException e) {
-            logger.error("Failed to remove email password encryption", e);
-            throw new HttpException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to start SMTP client", e);
-        }
+        mailSenderInstance.setUsername(userName);
+        mailSenderInstance.setPassword(password);
 
-        Properties props = javaMailSender.getJavaMailProperties();
+        Properties props = mailSenderInstance.getJavaMailProperties();
 
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
 
-        senders.put(settings.getChannelUuid(), javaMailSender);
-        return getMailSender(settings);
-    }
-
-    /**
-     * Search SMTP client instance
-     * 
-     * @param settings SMTP Client Settings
-     * @return SMTP client instance
-     */
-    public static JavaMailSender getMailSender(SMTPSettings settings) {
-        if (senders.containsKey(settings.getChannelUuid())) {
-            return senders.get(settings.getChannelUuid());
-        } else {
-            return createOrUpdateMailSender(settings);
-        }
-    }
-
-    /**
-     * Remove data from cache system drive
-     * 
-     * @param senderUuid Sender UUID
-     */
-    public static void removeMailSender(String senderUuid) {
-        senders.remove(senderUuid);
+        return mailSenderInstance;
     }
 
     /**
      * Send a simple message via email
      * 
-     * @param javaMailSender SMTP Client
      * @param subject Message subject
      * @param sender Sender's email
      * @param to Email that will receive the message
      * @param text Text that will be sent by email
      */
-    public void sendSimpleMessage(JavaMailSender javaMailSender, String subject, String sender, String to, String text) {
+    public void sendSimpleMessage(String subject, String sender, String to, String text) {
+        final JavaMailSender javaMailSender = getMailSender();
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(sender);
         message.setTo(to);
@@ -112,7 +72,6 @@ public class EmailIntegration {
     /**
      * Prepares the HTML message for sending
      * 
-     * @param javaMailSender SMTP Client
      * @param subject Email message subject
      * @param sender Sender's email
      * @param template HTML template for submission
@@ -121,11 +80,12 @@ public class EmailIntegration {
      * @return Processed message ready for sending
      * @throws MessagingException
      */
-    public void sendHtmlMessage(JavaMailSender javaMailSender, TemplateEngine templateEngine, String subject, String sender,
+    public void sendHtmlMessage(TemplateEngine templateEngine, String subject, String sender,
                                 String template,
                                 Map<String, String> variables,
                                 String to)
             throws MessagingException {
+        final JavaMailSender javaMailSender = getMailSender();
         MimeMessage mm = javaMailSender.createMimeMessage();
         MimeMessageHelper mmh = new MimeMessageHelper(mm, true);
 
