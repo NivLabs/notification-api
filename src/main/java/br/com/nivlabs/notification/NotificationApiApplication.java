@@ -7,10 +7,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
 import jakarta.annotation.PostConstruct;
 
 @SpringBootApplication
+@EnableEurekaClient
 public class NotificationApiApplication {
     private static Logger logger = LoggerFactory.getLogger(NotificationApiApplication.class);
 
