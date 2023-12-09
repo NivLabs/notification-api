@@ -23,4 +23,6 @@ echo 'SMTP Host: ' ${SMTP_HOST}
 echo 'SMTP Port: ' ${SMTP_PORT}
 echo 'SMTP user: ' ${SMTP_USERNAME}
 
+mvn clean package -DskipTests=true
+
 java -jar /root/repo/notification-api/target/notification-api.jar
